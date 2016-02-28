@@ -1,0 +1,125 @@
+/**
+ * Basic demonstration of a Client/Server application in Java.
+ * Client Side
+ * @author (crdsmith) 
+ * @version (version 1, 2016/02/28)
+ */
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.*;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class ClientApp extends JFrame implements ActionListener
+{
+    private Socket server;
+    public static ObjectOutputStream out;
+    public static ObjectInputStream in;
+    private JButton enter = new JButton("ENTER");
+    private JTextField txtMessage = new JTextField(40);
+    private JTextArea txtList = new JTextArea(4, 40);
+    private JPanel topPanel = new JPanel();
+    private JPanel midPanel = new JPanel();
+    private JPanel bodPanel = new JPanel();
+    private String response;
+    private String message;
+    /** Creates a new instance of ClientApp */
+    public ClientApp()
+    {
+         super("Client Side");
+        // Attempt to establish connection to server
+        try
+        {
+            // Create socket
+            server = new Socket("127.0.0.1", 12345);
+            setLayout(new GridLayout (3, 1, 10, 10));
+            
+            midPanel.setLayout(new FlowLayout());
+            bodPanel.setLayout(new FlowLayout());
+            topPanel.add(txtMessage);
+        
+           bodPanel.add(enter);
+           JScrollPane scroll = new JScrollPane(txtList);
+           scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+           midPanel.add(scroll);
+           add(topPanel);
+           add(midPanel);
+           add(bodPanel);
+           
+           enter.addActionListener(this);
+        }
+        catch (IOException ioe)
+        {
+            System.out.println("IOException3: " + ioe.getMessage());
+        }
+    }
+    
+    public void communicate()
+    {
+        // The connection has been established - now send/receive.
+        
+        try
+        {        
+            // Step 1: create channels
+            //ObjectOutputStream out = new ObjectOutputStream(server.getOutputStream());
+            //out.flush();
+           // ObjectInputStream in = new ObjectInputStream(server.getInputStream());
+            
+            // Step 2: communicate
+         do{
+             in = new ObjectInputStream(server.getInputStream());
+            response = (String)in.readObject();
+            txtList.append("From SERVER>> " + response + "\n");
+            }while(!response.equals("TERMINATE"));
+            // Step 3: close down
+            in.close();
+            out.close(); 
+            server.close();        
+        }
+        catch (IOException ioe)
+        {
+            System.out.println("IO Exception1: " + ioe.getMessage());
+        }
+        catch (ClassNotFoundException cnfe)
+        {
+            System.out.println("Class not found: " + cnfe.getMessage());
+        }
+       
+    }
+    
+    public void actionPerformed(ActionEvent e)
+    {
+    
+        if(e.getSource()== enter)
+        { 
+           sendData(txtMessage.getText());
+        }
+    }
+    
+      private void sendData(String myMsg)
+    {
+        try{
+            out = new ObjectOutputStream(server.getOutputStream());
+            out.writeObject(myMsg);
+            out.flush();        
+        }
+        catch (IOException ioe)
+        {
+           System.out.println("IO Exception2: " + ioe.getMessage());
+        }        
+    }
+    
+    public static void main(String[] args)
+    {
+       ClientApp client = new ClientApp();
+       client.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+       client.setSize(500, 250);
+       client.setResizable(false);
+       client.setVisible(true);
+       client.communicate();
+    }    
+}
+
+
